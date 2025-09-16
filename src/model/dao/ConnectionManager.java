@@ -10,13 +10,13 @@ import java.sql.SQLException;
  */
 public class ConnectionManager {
 	/** Javaとsuedbデータベースの接続のためのAPIのURL。 */
-	private static final String URL = "jdbc:mysql://127.0.0.1/test_schema?useSSL=false";
-	
+	private static final String URL = getRequiredConfig("DB_URL");
+
 	/** suedbデータベースを使うユーザー。*/
-	private static final String USER = "root";
-	
+	private static final String USER = getRequiredConfig("DB_USER");
+
 	/** suedbデータベースを使うパスワード。 */
-	private static final String PASS = "4gp351dG!";
+	private static final String PASS = getRequiredConfig("DB_PASSWORD");
 	
 	/** 唯一のインスタンスを生成する。 */
 	private static ConnectionManager instance = new ConnectionManager();
@@ -44,5 +44,22 @@ public class ConnectionManager {
 			e.printStackTrace();
 		}
 		return DriverManager.getConnection(URL, USER, PASS);
+	}
+
+	/**
+	 * 指定されたキーの環境変数／システムプロパティを取得する。
+	 * @param key 取得したい設定値のキー
+	 * @return 環境変数またはシステムプロパティに設定された値
+	 * @throws IllegalStateException 必要な設定が見つからなかった場合
+	 */
+	private static String getRequiredConfig(String key) {
+		String value = System.getenv(key);
+		if(value == null || value.isEmpty()){
+			value = System.getProperty(key);
+		}
+		if(value == null || value.isEmpty()){
+			throw new IllegalStateException("Required configuration '" + key + "' is not set.");
+		}
+		return value;
 	}
 }

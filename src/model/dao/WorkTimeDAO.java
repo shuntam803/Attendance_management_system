@@ -1,9 +1,9 @@
 package model.dao;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -24,9 +24,6 @@ public class WorkTimeDAO {
 	/** 特定のデータベースとの接続(セッション)。 */
 	private Connection conn = null;
 	
-	/** 静的SQL文を実行し、作成された結果を返すために使用されるオブジェクト。 */
-	private Statement st;
-
 	/** privateのため新規のインスタンスをつくらせない。 */
 	private WorkTimeDAO() {}
 
@@ -51,17 +48,15 @@ public class WorkTimeDAO {
 	 * @throws SQLException データベース処理に問題があった場合。
 	 * 静的SQL文を実行し、作成された結果を返すために使用されるオブジェクトを生成する。
 	 */
-	public void createSt() throws SQLException {
-		st = conn.createStatement();
-	}
+        public void createSt() throws SQLException {
+                // PreparedStatement を各メソッド内で生成するため、ここで行う処理はありません。
+        }
 
 	/** 特定のデータベースとの接続(セッション)を切断する。 */
 	public void dbDiscon() {
 		try {
-			if (st != null)
-				st.close();
-			if (conn != null)
-				conn.close();
+                        if (conn != null)
+                                conn.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
@@ -74,14 +69,17 @@ public class WorkTimeDAO {
 	 * 出勤情報が既に存在しているかチェックする。
 	 */
 	public String selectStartTime(String employeeCode) throws SQLException {
-		String sql = "SELECT * FROM t_work_time WHERE employee_code = '" + employeeCode +
-				"' AND work_date = '" + LocalDate.now() + "';";
-		ResultSet rs = st.executeQuery(sql);
-		if(rs.next()) {
-			return "disable";
-		} else {
-			return null;
+		String sql = "SELECT 1 FROM t_work_time WHERE employee_code = ? AND work_date = ?";
+		try (PreparedStatement ps = conn.prepareStatement(sql)) {
+			ps.setString(1, employeeCode);
+			ps.setString(2, LocalDate.now().toString());
+			try (ResultSet rs = ps.executeQuery()) {
+				if (rs.next()) {
+					return "disable";
+				}
+			}
 		}
+		return null;
 	}
 
 	/**
@@ -91,14 +89,17 @@ public class WorkTimeDAO {
 	 * 退勤情報が既に存在しているかチェックする。
 	 */
 	public String selectFinishTime(String employeeCode) throws SQLException {
-		String sql = "SELECT * FROM t_work_time WHERE employee_code = '" + employeeCode +
-				"' AND work_date = '" + LocalDate.now() + "';";
-		ResultSet rs = st.executeQuery(sql);
-		if(rs.next() && rs.getString(4) != null) {
-			return "disable";
-		} else {
-			return null;
+		String sql = "SELECT finish_time FROM t_work_time WHERE employee_code = ? AND work_date = ?";
+		try (PreparedStatement ps = conn.prepareStatement(sql)) {
+			ps.setString(1, employeeCode);
+			ps.setString(2, LocalDate.now().toString());
+			try (ResultSet rs = ps.executeQuery()) {
+				if (rs.next() && rs.getString(1) != null) {
+					return "disable";
+				}
+			}
 		}
+		return null;
 	}
 
 	/**
@@ -108,14 +109,17 @@ public class WorkTimeDAO {
 	 * 休憩開始情報が既に存在しているかチェックする。
 	 */
 	public String selectStartBreak(String employeeCode) throws SQLException {
-		String sql = "SELECT * FROM t_work_time WHERE employee_code = '" + employeeCode +
-				"' AND work_date = '" + LocalDate.now() + "';";
-		ResultSet rs = st.executeQuery(sql);
-		if(rs.next() && rs.getString(5) != null) {
-			return "disable";
-		} else {
-			return null;
+		String sql = "SELECT break_start_time FROM t_work_time WHERE employee_code = ? AND work_date = ?";
+		try (PreparedStatement ps = conn.prepareStatement(sql)) {
+			ps.setString(1, employeeCode);
+			ps.setString(2, LocalDate.now().toString());
+			try (ResultSet rs = ps.executeQuery()) {
+				if (rs.next() && rs.getString(1) != null) {
+					return "disable";
+				}
+			}
 		}
+		return null;
 	}
 
 	/**
@@ -125,14 +129,17 @@ public class WorkTimeDAO {
 	 * 休憩終了情報が既に存在しているかチェックする。
 	 */
 	public String selectFinishBreak(String employeeCode) throws SQLException {
-		String sql = "SELECT * FROM t_work_time WHERE employee_code = '" + employeeCode +
-				"' AND work_date = '" + LocalDate.now() + "';";
-		ResultSet rs = st.executeQuery(sql);
-		if(rs.next() && rs.getString(6) != null) {
-			return "disable";
-		} else {
-			return null;
+		String sql = "SELECT break_finish_time FROM t_work_time WHERE employee_code = ? AND work_date = ?";
+		try (PreparedStatement ps = conn.prepareStatement(sql)) {
+			ps.setString(1, employeeCode);
+			ps.setString(2, LocalDate.now().toString());
+			try (ResultSet rs = ps.executeQuery()) {
+				if (rs.next() && rs.getString(1) != null) {
+					return "disable";
+				}
+			}
 		}
+		return null;
 	}
 
 	/**
@@ -145,40 +152,43 @@ public class WorkTimeDAO {
 	public List<WorkTime> selectWorkTimeThisMonthList(String employeeCode,String thisMonth)
 			throws SQLException {
 		List<WorkTime> workTimeThisMonthList = new LinkedList<WorkTime>();
-		String sql = "SELECT * FROM t_work_time WHERE employee_code = '" + employeeCode +
-		"' AND work_date LIKE '" + thisMonth + "%';";
-		ResultSet rs = st.executeQuery(sql);
-
-		while(rs.next()){
-			WorkTime workTime = new WorkTime();
-			workTime.setWorkDate(LocalDate.parse(rs.getString(2),
-					DateTimeFormatter.ofPattern("yyyy-MM-dd")) );
-			DateTimeFormatter dtf = DateTimeFormatter.ofPattern("HH:mm:ss");
-			if(rs.getString(3) != null) {
-				LocalTime startTime = LocalTime.parse(rs.getString(3), dtf);
-				workTime.setStartTime(startTime);
+		String sql = "SELECT * FROM t_work_time WHERE employee_code = ? AND work_date LIKE ?";
+		try (PreparedStatement ps = conn.prepareStatement(sql)) {
+			ps.setString(1, employeeCode);
+			ps.setString(2, thisMonth + "%");
+			try (ResultSet rs = ps.executeQuery()) {
+				while (rs.next()) {
+					WorkTime workTime = new WorkTime();
+					workTime.setWorkDate(LocalDate.parse(rs.getString(2),
+						DateTimeFormatter.ofPattern("yyyy-MM-dd")) );
+					DateTimeFormatter dtf = DateTimeFormatter.ofPattern("HH:mm:ss");
+					if (rs.getString(3) != null) {
+						LocalTime startTime = LocalTime.parse(rs.getString(3), dtf);
+						workTime.setStartTime(startTime);
+					}
+					if (rs.getString(4) != null) {
+						LocalTime finishTime = LocalTime.parse(rs.getString(4), dtf);
+						workTime.setFinishTime(finishTime);
+					}
+					if (rs.getString(5) != null) {
+						LocalTime breakStartTime = LocalTime.parse(rs.getString(5), dtf);
+						workTime.setBreakStartTime(breakStartTime);
+					}
+					if (rs.getString(6) != null) {
+						LocalTime breakFinishTime = LocalTime.parse(rs.getString(6), dtf);
+						workTime.setBreakFinishTime(breakFinishTime);
+					}
+					if (rs.getString(5) != null && rs.getString(6) != null) {
+						//自動計算セットするメソッド
+						workTime.calcBreakTime();
+					}
+					if (rs.getString(3) != null && rs.getString(4) != null) {
+						//自動計算セットするメソッド
+						workTime.calcWorkingHours();
+					}
+					workTimeThisMonthList.add(workTime);
+				}
 			}
-			if(rs.getString(4) != null) {
-				LocalTime finishTime = LocalTime.parse(rs.getString(4), dtf);
-				workTime.setFinishTime(finishTime);
-			}
-			if(rs.getString(5) != null) {
-				LocalTime breakStartTime = LocalTime.parse(rs.getString(5), dtf);
-				workTime.setBreakStartTime(breakStartTime);
-			}
-			if(rs.getString(6) != null) {
-				LocalTime breakFinishTime = LocalTime.parse(rs.getString(6), dtf);
-				workTime.setBreakFinishTime(breakFinishTime);
-			}
-			if(rs.getString(5) != null && rs.getString(6) != null) {
-				//自動計算セットするメソッド
-				workTime.calcBreakTime();
-			}
-			if(rs.getString(3) != null && rs.getString(4) != null) {
-				//自動計算セットするメソッド
-				workTime.calcWorkingHours();
-			}
-			workTimeThisMonthList.add(workTime);
 		}
 		return workTimeThisMonthList;
 	}
