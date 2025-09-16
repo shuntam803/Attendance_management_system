@@ -2,9 +2,9 @@
 package model.dao;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -19,9 +19,6 @@ public class AttendanceEmployeeDAO {
 	/** 特定のデータベースとの接続(セッション)。 */
 	private Connection conn;
 	
-	/** 静的SQL文を実行し、作成された結果を返すために使用されるオブジェクト。 */
-	private Statement st;
-
 	/**
 	 * 日付/時間オブジェクトの出力および解析のためのフォーマッタ。
 	 * "HH:mm:ss"のフォーマットで表記。
@@ -57,17 +54,15 @@ public class AttendanceEmployeeDAO {
 	 * @throws SQLException データベース処理に問題があった場合。
 	 * 静的SQL文を実行し、作成された結果を返すために使用されるオブジェクトを生成する。
 	 */
-	public void createSt() throws SQLException {
-		st = conn.createStatement();
-	}
+        public void createSt() throws SQLException {
+                // PreparedStatement を各メソッド内で生成するため、ここで行う処理はありません。
+        }
 
 	/** 特定のデータベースとの接続(セッション)を切断する。*/
 	public void dbDiscon() {
 		try {
-			if (st != null)
-				st.close();
-			if (conn != null)
-				conn.close();
+                        if (conn != null)
+                                conn.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
@@ -81,18 +76,17 @@ public class AttendanceEmployeeDAO {
 	 * 指定されたemployeeCodeとpasswordから従業員がログインできるかどうかチェックする。
 	 */
 	public String loginEmployee(String employeeCode, String password) throws SQLException {
-		String sql = "SELECT * FROM m_employee WHERE "
-				+ "employee_code='"
-				+ employeeCode + "' and password='" + password + "';";
-		ResultSet rs = st.executeQuery(sql);
-		if (rs.next()) {
-			if (employeeCode.equals(rs.getString(1))) {
-				if (password.equals(rs.getString(11))) {
-					return employeeCode;
-				}
-			}
-		}
-		return null;
+                String sql = "SELECT employee_code FROM m_employee WHERE employee_code = ? AND password = ?";
+                try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                        ps.setString(1, employeeCode);
+                        ps.setString(2, password);
+                        try (ResultSet rs = ps.executeQuery()) {
+                                if (rs.next()) {
+                                        return employeeCode;
+                                }
+                        }
+                }
+                return null;
 	}
 
 	/**
@@ -105,19 +99,41 @@ public class AttendanceEmployeeDAO {
 		conn.setAutoCommit(false);
 		LocalDateTime now = LocalDateTime.now();
 		//既にその日のデータが追加されていたらfalseを返す
-		String sql = "SELECT * FROM t_work_time WHERE employee_code = '" + employeeCode
-				+ "' AND work_date = '" + now.format(dateFormat) + "';";
-		ResultSet rs = st.executeQuery(sql);
-		if(rs.next()) {
-			return false;
-		} else {
-			sql = "INSERT INTO t_work_time (employee_code, work_date, start_time) VALUES ('"
-			+ employeeCode + "', '" + now.format(dateFormat) + "', '"
-			+ now.format(timeFormat) + "' );";
-			st.executeUpdate(sql);
-			conn.commit();
-			return true;
-		}
+                String checkSql = "SELECT 1 FROM t_work_time WHERE employee_code = ? AND work_date = ?";
+                String insertSql = "INSERT INTO t_work_time (employee_code, work_date, start_time) VALUES (?, ?, ?)";
+                boolean result = false;
+                try {
+                        boolean exists;
+                        try (PreparedStatement checkPs = conn.prepareStatement(checkSql)) {
+                                checkPs.setString(1, employeeCode);
+                                checkPs.setString(2, now.format(dateFormat));
+                                try (ResultSet rs = checkPs.executeQuery()) {
+                                        exists = rs.next();
+                                }
+                        }
+
+                        if (!exists) {
+                                try (PreparedStatement insertPs = conn.prepareStatement(insertSql)) {
+                                        insertPs.setString(1, employeeCode);
+                                        insertPs.setString(2, now.format(dateFormat));
+                                        insertPs.setString(3, now.format(timeFormat));
+                                        if (insertPs.executeUpdate() > 0) {
+                                                conn.commit();
+                                                result = true;
+                                        }
+                                }
+                        }
+
+                        if (!result) {
+                                rollbackQuietly();
+                        }
+                } catch (SQLException e) {
+                        rollbackQuietly();
+                        throw e;
+                } finally {
+                        resetAutoCommit();
+                }
+                return result;
 	}
 
 	/**
@@ -130,18 +146,41 @@ public class AttendanceEmployeeDAO {
 		conn.setAutoCommit(false);
 		LocalDateTime now = LocalDateTime.now();
 		//出勤が押されていなかったらfalseを返す
-		String sql = "SELECT * FROM t_work_time WHERE employee_code = '" + employeeCode
-				+ "' and work_date = '" + now.format(dateFormat) + "';";
-		ResultSet rs = st.executeQuery(sql);
-		if(!rs.next()) {
-			return false;
-		} else {
-			sql = "UPDATE t_work_time SET finish_time = '" + now.format(timeFormat)
-					+ "' WHERE employee_code = '" + employeeCode + "' AND work_date = '" + now.format(dateFormat) + "';";
-			st.executeUpdate(sql);
-			conn.commit();
-			return true;
-		}
+                String selectSql = "SELECT 1 FROM t_work_time WHERE employee_code = ? AND work_date = ?";
+                String updateSql = "UPDATE t_work_time SET finish_time = ? WHERE employee_code = ? AND work_date = ?";
+                boolean updated = false;
+                try {
+                        boolean exists;
+                        try (PreparedStatement selectPs = conn.prepareStatement(selectSql)) {
+                                selectPs.setString(1, employeeCode);
+                                selectPs.setString(2, now.format(dateFormat));
+                                try (ResultSet rs = selectPs.executeQuery()) {
+                                        exists = rs.next();
+                                }
+                        }
+
+                        if (exists) {
+                                try (PreparedStatement updatePs = conn.prepareStatement(updateSql)) {
+                                        updatePs.setString(1, now.format(timeFormat));
+                                        updatePs.setString(2, employeeCode);
+                                        updatePs.setString(3, now.format(dateFormat));
+                                        if (updatePs.executeUpdate() > 0) {
+                                                conn.commit();
+                                                updated = true;
+                                        }
+                                }
+                        }
+
+                        if (!updated) {
+                                rollbackQuietly();
+                        }
+                } catch (SQLException e) {
+                        rollbackQuietly();
+                        throw e;
+                } finally {
+                        resetAutoCommit();
+                }
+                return updated;
 	}
 
 	/**
@@ -154,18 +193,41 @@ public class AttendanceEmployeeDAO {
 		conn.setAutoCommit(false);
 		LocalDateTime now = LocalDateTime.now();
 		//出勤が押されていなかったらfalseを返す
-		String sql = "SELECT * FROM t_work_time WHERE employee_code = '" + employeeCode
-				+ "' AND work_date = '" + now.format(dateFormat) + "';";
-		ResultSet rs = st.executeQuery(sql);
-		if(!rs.next()) {
-			return false;
-		} else {
-			sql = "UPDATE t_work_time SET break_start_time = '" + now.format(timeFormat)
-					+ "' WHERE employee_code = '" + employeeCode + "' AND work_date = '" + now.format(dateFormat) + "';";
-			st.executeUpdate(sql);
-			conn.commit();
-			return true;
-		}
+                String selectSql = "SELECT 1 FROM t_work_time WHERE employee_code = ? AND work_date = ?";
+                String updateSql = "UPDATE t_work_time SET break_start_time = ? WHERE employee_code = ? AND work_date = ?";
+                boolean updated = false;
+                try {
+                        boolean exists;
+                        try (PreparedStatement selectPs = conn.prepareStatement(selectSql)) {
+                                selectPs.setString(1, employeeCode);
+                                selectPs.setString(2, now.format(dateFormat));
+                                try (ResultSet rs = selectPs.executeQuery()) {
+                                        exists = rs.next();
+                                }
+                        }
+
+                        if (exists) {
+                                try (PreparedStatement updatePs = conn.prepareStatement(updateSql)) {
+                                        updatePs.setString(1, now.format(timeFormat));
+                                        updatePs.setString(2, employeeCode);
+                                        updatePs.setString(3, now.format(dateFormat));
+                                        if (updatePs.executeUpdate() > 0) {
+                                                conn.commit();
+                                                updated = true;
+                                        }
+                                }
+                        }
+
+                        if (!updated) {
+                                rollbackQuietly();
+                        }
+                } catch (SQLException e) {
+                        rollbackQuietly();
+                        throw e;
+                } finally {
+                        resetAutoCommit();
+                }
+                return updated;
 	}
 
 	/**
@@ -178,18 +240,62 @@ public class AttendanceEmployeeDAO {
 		conn.setAutoCommit(false);
 		LocalDateTime now = LocalDateTime.now();
 		//出勤または休憩開始が押されていなかったらfalseを返す
-		String sql = "SELECT * FROM t_work_time WHERE employee_code = '" + employeeCode
-				+ "' AND work_date = '" + now.format(dateFormat) + "';";
-		ResultSet rs = st.executeQuery(sql);
-		if(!rs.next() && rs.getString(5) == null) {
-			return false;
-		} else {
-			sql = "UPDATE t_work_time SET break_finish_time = '" + now.format(timeFormat)
-					+ "' WHERE employee_code = '" + employeeCode + "' AND work_date = '" + now.format(dateFormat) + "';";
-			st.executeUpdate(sql);
-			conn.commit();
-			return true;
-		}
-	}
+                String selectSql = "SELECT break_start_time FROM t_work_time WHERE employee_code = ? AND work_date = ?";
+                String updateSql = "UPDATE t_work_time SET break_finish_time = ? WHERE employee_code = ? AND work_date = ?";
+                boolean updated = false;
+                try {
+                        boolean canUpdate = false;
+                        try (PreparedStatement selectPs = conn.prepareStatement(selectSql)) {
+                                selectPs.setString(1, employeeCode);
+                                selectPs.setString(2, now.format(dateFormat));
+                                try (ResultSet rs = selectPs.executeQuery()) {
+                                        if (rs.next() && rs.getString(1) != null) {
+                                                canUpdate = true;
+                                        }
+                                }
+                        }
 
+                        if (canUpdate) {
+                                try (PreparedStatement updatePs = conn.prepareStatement(updateSql)) {
+                                        updatePs.setString(1, now.format(timeFormat));
+                                        updatePs.setString(2, employeeCode);
+                                        updatePs.setString(3, now.format(dateFormat));
+                                        if (updatePs.executeUpdate() > 0) {
+                                                conn.commit();
+                                                updated = true;
+                                        }
+                                }
+                        }
+
+                        if (!updated) {
+                                rollbackQuietly();
+                        }
+                } catch (SQLException e) {
+                        rollbackQuietly();
+                        throw e;
+                } finally {
+                        resetAutoCommit();
+                }
+                return updated;
+        }
+
+        private void rollbackQuietly() {
+                if (conn != null) {
+                        try {
+                                conn.rollback();
+                        } catch (SQLException e) {
+                                e.printStackTrace();
+                        }
+                }
+        }
+
+        private void resetAutoCommit() {
+                if (conn != null) {
+                        try {
+                                conn.setAutoCommit(true);
+                        } catch (SQLException e) {
+                                e.printStackTrace();
+                        }
+                }
+        }
 }

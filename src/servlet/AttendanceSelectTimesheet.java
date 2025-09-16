@@ -55,32 +55,51 @@ public class AttendanceSelectTimesheet extends HttpServlet {
 	 * セッション情報に出退勤時刻情報のリストをセットする。
 	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		HttpSession session = request.getSession();
-		String employeeCode = (String) session.getAttribute("employeeCode");
-		String thisMonth = request.getParameter("thisMonth");
-		Calendar thisMonthCalneder = Calendar.getInstance();
-		thisMonthCalneder.set(Calendar.YEAR, Integer.parseInt(thisMonth.substring(0, 4)));
-		thisMonthCalneder.set(Calendar.MONTH, Integer.parseInt(thisMonth.substring(5)));
+                HttpSession session = request.getSession();
+                String employeeCode = (String) session.getAttribute("employeeCode");
+                if (employeeCode == null) {
+                        response.sendRedirect("attendance_login.jsp");
+                        return;
+                }
 
-		WorkTimeDAO workTimeDao = WorkTimeDAO.getInstance();
-		EmployeeDAO empdao = EmployeeDAO.getInstance();
-		try {
-			workTimeDao.dbConnect();
-			workTimeDao.createSt();
-			List<WorkTime> workTimeThisMonthList =
-					workTimeDao.selectWorkTimeThisMonthList(employeeCode, thisMonth);
-			session.setAttribute("workTimeThisMonthList", workTimeThisMonthList);
-			empdao.dbConnect();
-			empdao.createSt();
-			Employee employee = empdao.selectEmployee(employeeCode);
-			String employeeName = employee.getLastName() + "　" + employee.getFirstName();
-			session.setAttribute("employeeName", employeeName);
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
+                String thisMonth = request.getParameter("thisMonth");
+                if (thisMonth == null || thisMonth.length() < 7) {
+                        response.sendRedirect("attendance_menu.jsp");
+                        return;
+                }
 
-		session.setAttribute("thisMonth", thisMonthCalneder);
-		response.sendRedirect("attendance_view_timesheet.jsp");
+                Calendar thisMonthCalneder = Calendar.getInstance();
+                thisMonthCalneder.set(Calendar.YEAR, Integer.parseInt(thisMonth.substring(0, 4)));
+                thisMonthCalneder.set(Calendar.MONTH, Integer.parseInt(thisMonth.substring(5)) - 1);
+                thisMonthCalneder.set(Calendar.DAY_OF_MONTH, 1);
+
+                WorkTimeDAO workTimeDao = WorkTimeDAO.getInstance();
+                EmployeeDAO empdao = EmployeeDAO.getInstance();
+                try {
+                        workTimeDao.dbConnect();
+                        workTimeDao.createSt();
+                        List<WorkTime> workTimeThisMonthList =
+                                        workTimeDao.selectWorkTimeThisMonthList(employeeCode, thisMonth);
+                        session.setAttribute("workTimeThisMonthList", workTimeThisMonthList);
+                        empdao.dbConnect();
+                        empdao.createSt();
+                        Employee employee = empdao.selectEmployee(employeeCode);
+                        if (employee == null) {
+                                session.invalidate();
+                                response.sendRedirect("attendance_login.jsp");
+                                return;
+                        }
+                        String employeeName = employee.getLastName() + "　" + employee.getFirstName();
+                        session.setAttribute("employeeName", employeeName);
+                } catch (SQLException e) {
+                        throw new ServletException("Failed to load timesheet", e);
+                } finally {
+                        workTimeDao.dbDiscon();
+                        empdao.dbDiscon();
+                }
+
+                session.setAttribute("thisMonth", thisMonthCalneder);
+                response.sendRedirect("attendance_view_timesheet.jsp");
 
 	}
 

@@ -1,9 +1,9 @@
 package model.dao;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -20,9 +20,6 @@ public class ViewListDAO {
 	/** 特定のデータベースとの接続(セッション)。 */
 	private Connection conn;
 	
-	/** 静的SQL文を実行し、作成された結果を返すために使用されるオブジェクト。 */
-	private Statement st;
-
 	/** 従業員一覧表示用モデルクラスのリストを生成する。 */
 	private List<ViewListDisplay> list = new LinkedList<ViewListDisplay>();
 
@@ -50,17 +47,15 @@ public class ViewListDAO {
 	 * @throws SQLException データベース処理に問題があった場合。
 	 * 静的SQL文を実行し、作成された結果を返すために使用されるオブジェクトを生成する。
 	 */
-	public void createSt() throws SQLException {
-		st = conn.createStatement();
-	}
+        public void createSt() throws SQLException {
+                // PreparedStatement を各メソッド内で生成するため、ここで行う処理はありません。
+        }
 
 	/** 特定のデータベースとの接続(セッション)を切断する。 */
 	public void dbDiscon() {
 		try {
-			if (st != null)
-				st.close();
-			if (conn != null)
-				conn.close();
+                        if (conn != null)
+                                conn.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
@@ -80,22 +75,23 @@ public class ViewListDAO {
 				+ "s.section_name, hire_date "
 				+ "FROM m_employee e LEFT OUTER JOIN m_section s "
 				+ "ON e.section_code = s.section_code";
-		ResultSet rs = st.executeQuery(sql);
+                try (PreparedStatement ps = conn.prepareStatement(sql);
+                                ResultSet rs = ps.executeQuery()) {
+                        while (rs.next()) {
+                                //レコードの値を取得
+                                ViewListDisplay vld = new ViewListDisplay();
 
-		while(rs.next()){
-			//レコードの値を取得
-			ViewListDisplay vld = new ViewListDisplay();
+                                vld.setEmployeeCode(rs.getString(1));
+                                vld.setEmployeeName(rs.getString(2));
+                                vld.setEmployeeKanaName(rs.getString(3));
+                                vld.setGender(rs.getInt(4));
+                                vld.setBirthDay(rs.getDate(5));
+                                vld.setSectionName(rs.getString(6));
+                                vld.setHireDate(rs.getDate(7));
 
-			vld.setEmployeeCode(rs.getString(1));
-			vld.setEmployeeName(rs.getString(2));
-			vld.setEmployeeKanaName(rs.getString(3));
-			vld.setGender(rs.getInt(4));
-			vld.setBirthDay(rs.getDate(5));
-			vld.setSectionName(rs.getString(6));
-			vld.setHireDate(rs.getDate(7));
-
-			list.add(vld);
-		}
-		return list;
-	}
+                                list.add(vld);
+                        }
+                }
+                return list;
+        }
 }

@@ -2,9 +2,9 @@
 package model.dao;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -21,9 +21,6 @@ public class EmployeeDAO {
 	
 	/** 特定のデータベースとの接続(セッション)。 */
 	private Connection conn;
-	
-	/** 静的SQL文を実行し、作成された結果を返すために使用されるオブジェクト。 */
-	private Statement st;
 	
 	/** privateのため新規のインスタンスをつくらせない。 */
 	private EmployeeDAO() {}
@@ -49,21 +46,19 @@ public class EmployeeDAO {
 	 * @throws SQLException データベース処理に問題があった場合。
 	 * 静的SQL文を実行し、作成された結果を返すために使用されるオブジェクトを生成する。
 	 */
-	public void createSt() throws SQLException {
-		st = conn.createStatement();
-	}
+        public void createSt() throws SQLException {
+                // PreparedStatement を各メソッド内で生成するため、ここで行う処理はありません。
+        }
 
 	/** 特定のデータベースとの接続(セッション)を切断する。 */
-	public void dbDiscon() {
-		try {
-			if (st != null)
-				st.close();
-			if (conn != null)
-				conn.close();
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-	}
+        public void dbDiscon() {
+                try {
+                        if (conn != null)
+                                conn.close();
+                } catch (SQLException e) {
+                        e.printStackTrace();
+                }
+        }
 
 	/**
 	 * @param lastName 従業員の苗字。
@@ -85,30 +80,48 @@ public class EmployeeDAO {
 		// オートコミットを無効にする
 		conn.setAutoCommit(false);
 
-		String sql = "SELECT MAX(employee_code) FROM m_employee;";
-		ResultSet rs = st.executeQuery(sql);
+		String selectMaxSql = "SELECT MAX(employee_code) FROM m_employee";
+		String insertSql = "INSERT INTO m_employee VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, null, ?)";
 		int code = 0;
-		String employeeCode;
-
-		if(rs.next()){
-			code = Integer.parseInt(rs.getString(1).substring(1)) + 1;
-		}
-
-		employeeCode = "E" + String.format("%04d", code);
-
+		String employeeCode = "E0001";
 		boolean flag = false;
-		String sql2 = "INSERT INTO m_employee VALUES('"+ employeeCode +"','" + lastName + "', '" + firstName + "', '" + lastKanaName + "',"
-				+ "'" + firstKanaName + "', '" + gender + "', '" + birthDay + "' , '" + sectionCode + "', '" + hireDate + "', null, '" + password + "');";
 
-		int result = st.executeUpdate(sql2);
+                try {
+                        try (PreparedStatement maxPs = conn.prepareStatement(selectMaxSql);
+                                        ResultSet rs = maxPs.executeQuery()) {
+                                if (rs.next() && rs.getString(1) != null) {
+                                        code = Integer.parseInt(rs.getString(1).substring(1)) + 1;
+                                        employeeCode = "E" + String.format("%04d", code);
+                                }
+                        }
 
-		// 正しく追加できた場合、コミットする
-		if (result > 0) {
-			flag = true;
-			conn.commit();
-		}
+                        try (PreparedStatement insertPs = conn.prepareStatement(insertSql)) {
+                                insertPs.setString(1, employeeCode);
+                                insertPs.setString(2, lastName);
+                                insertPs.setString(3, firstName);
+                                insertPs.setString(4, lastKanaName);
+                                insertPs.setString(5, firstKanaName);
+                                insertPs.setInt(6, gender);
+                                insertPs.setString(7, birthDay);
+                                insertPs.setString(8, sectionCode);
+                                insertPs.setString(9, hireDate);
+                                insertPs.setString(10, password);
+                                int result = insertPs.executeUpdate();
+                                if (result > 0) {
+                                        conn.commit();
+                                        flag = true;
+                                } else {
+                                        rollbackQuietly();
+                                }
+                        }
+                } catch (SQLException e) {
+                        rollbackQuietly();
+                        throw e;
+                } finally {
+                        resetAutoCommit();
+                }
 
-		return flag;
+                return flag;
 	}
 
 	/**
@@ -120,20 +133,29 @@ public class EmployeeDAO {
 	public Employee updateEmployee(Employee employee) throws SQLException {
 		conn.setAutoCommit(false);
 		
-		String sql = "UPDATE m_employee SET last_name = '" + employee.getLastName()
-		+ "', first_name = '" + employee.getFirstName()
-		+ "', last_kana_name = '"+ employee.getLastKanaName()
-		+ "', first_kana_name = '" + employee.getFirstKanaName()
-		+ "', gender = '" + employee.getGender()
-		+ "', birth_day = '" + employee.getBirthDay()
-		+ "', section_code = '" + employee.getSectionCode()
-		+ "', hire_date = '" + employee.getHireDate()
-		+ "' WHERE employee_code = '" + employee.getEmployeeCode() + "';";
-
-		int count = st.executeUpdate(sql);
-
-		if (count > 0) {
-			conn.commit();
+		String sql = "UPDATE m_employee SET last_name = ?, first_name = ?, last_kana_name = ?, first_kana_name = ?, "
+				+ "gender = ?, birth_day = ?, section_code = ?, hire_date = ? WHERE employee_code = ?";
+		try (PreparedStatement ps = conn.prepareStatement(sql)) {
+			ps.setString(1, employee.getLastName());
+			ps.setString(2, employee.getFirstName());
+			ps.setString(3, employee.getLastKanaName());
+			ps.setString(4, employee.getFirstKanaName());
+			ps.setInt(5, employee.getGender());
+			ps.setString(6, employee.getBirthDay());
+			ps.setString(7, employee.getSectionCode());
+			ps.setString(8, employee.getHireDate());
+			ps.setString(9, employee.getEmployeeCode());
+			int count = ps.executeUpdate();
+			if (count > 0) {
+				conn.commit();
+			} else {
+				rollbackQuietly();
+			}
+		} catch (SQLException e) {
+			rollbackQuietly();
+			throw e;
+		} finally {
+			resetAutoCommit();
 		}
 
 		return employee;
@@ -146,25 +168,26 @@ public class EmployeeDAO {
 	 * 指定されたemployeeCodeから従業員の情報を取得して、Employee型で返す。
 	 */
 	public Employee selectEmployee(String employeeCode) throws SQLException {
-		String sql = "SELECT * FROM m_employee WHERE employee_code = '"
-				+ employeeCode + "';";
-
-		ResultSet rs = st.executeQuery(sql);
+		String sql = "SELECT * FROM m_employee WHERE employee_code = ?";
 
 		Employee employee = null;
 
-		if(rs.next() && rs.getString(1).equals(employeeCode)){
-			employee = new Employee();
-			employee.setEmployeeCode(rs.getString(1));
-			employee.setLastName(rs.getString(2));
-			employee.setFirstName(rs.getString(3));
-			employee.setLastKanaName(rs.getString(4));
-			employee.setFirstKanaName(rs.getString(5));
-			employee.setGender(rs.getInt(6));
-			employee.setBirthDay(rs.getString(7));
-			employee.setSectionCode(rs.getString(8));
-			employee.setHireDate(rs.getString(9));
-
+		try (PreparedStatement ps = conn.prepareStatement(sql)) {
+			ps.setString(1, employeeCode);
+			try (ResultSet rs = ps.executeQuery()) {
+				if (rs.next()) {
+					employee = new Employee();
+					employee.setEmployeeCode(rs.getString(1));
+					employee.setLastName(rs.getString(2));
+					employee.setFirstName(rs.getString(3));
+					employee.setLastKanaName(rs.getString(4));
+					employee.setFirstKanaName(rs.getString(5));
+					employee.setGender(rs.getInt(6));
+					employee.setBirthDay(rs.getString(7));
+					employee.setSectionCode(rs.getString(8));
+					employee.setHireDate(rs.getString(9));
+				}
+			}
 		}
 
 		return employee;
@@ -179,12 +202,22 @@ public class EmployeeDAO {
 	 */
 	public int deleteEmployee(String employeeCode) throws SQLException {
 		conn.setAutoCommit(false);
-		String sql = "DELETE FROM m_employee WHERE employee_code = '"
-				+ employeeCode + "';";
-		int count = st.executeUpdate(sql);
+		String sql = "DELETE FROM m_employee WHERE employee_code = ?";
+		int count = 0;
 
-		if (count > 0) {
-			conn.commit();
+		try (PreparedStatement ps = conn.prepareStatement(sql)) {
+			ps.setString(1, employeeCode);
+			count = ps.executeUpdate();
+			if (count > 0) {
+				conn.commit();
+			} else {
+				rollbackQuietly();
+			}
+		} catch (SQLException e) {
+			rollbackQuietly();
+			throw e;
+		} finally {
+			resetAutoCommit();
 		}
 
 		return count;
@@ -196,18 +229,39 @@ public class EmployeeDAO {
 	 * @throws SQLException。データベース処理に問題があった場合。
 	 * 表示のために部署一覧を取得して、List<Section>型で返す。
 	 */
-	public List<Section> getSection() throws SQLException {
-		String sql = "SELECT * FROM m_section ORDER BY section_code;";
-		List<Section> sections = new LinkedList<Section>();
-		ResultSet rs = st.executeQuery(sql);
+        public List<Section> getSection() throws SQLException {
+                String sql = "SELECT * FROM m_section ORDER BY section_code";
+                List<Section> sections = new LinkedList<Section>();
+                try (PreparedStatement ps = conn.prepareStatement(sql);
+                                ResultSet rs = ps.executeQuery()) {
+                        while (rs.next()) {
+                                //レコードの値を取得
+                                Section se = new Section();
+                                se.setSectionCode(rs.getString(1));
+                                se.setSectionName(rs.getString(2));
+                                sections.add(se);
+                        }
+                }
+                return sections;
+        }
 
-		while(rs.next()){
-			//レコードの値を取得
-			Section se = new Section();
-			se.setSectionCode(rs.getString(1));
-			se.setSectionName(rs.getString(2));
-			sections.add(se);
-		}
-		return sections;
-	}
+        private void rollbackQuietly() {
+                if (conn != null) {
+                        try {
+                                conn.rollback();
+                        } catch (SQLException e) {
+                                e.printStackTrace();
+                        }
+                }
+        }
+
+        private void resetAutoCommit() {
+                if (conn != null) {
+                        try {
+                                conn.setAutoCommit(true);
+                        } catch (SQLException e) {
+                                e.printStackTrace();
+                        }
+                }
+        }
 }
