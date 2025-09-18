@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>タイムシート</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}" href="/css/style.css">
+</head>
+<body>
+<div class="header">
+    <span class="big_title">S</span>hun
+    <span class="big_title">C</span>ub
+</div>
+<div class="menu">
+    <div class="main_frame">
+        <p>タイムシート</p>
+    </div>
+</div>
+<div class="name_format">
+    名前：<span th:text="${employeeName}"></span>
+</div>
+<div class="name_format">
+    <span th:text="${#strings.replace(selectedMonth, '-', '年') + '月分'}"></span>
+</div>
+<div class="edit_top">
+    <div class="show_all_table">
+        <table class="border_table">
+            <tr class="top_table">
+                <th>日にち</th>
+                <th>出勤</th>
+                <th>退勤</th>
+                <th>休憩入り</th>
+                <th>休憩戻り</th>
+                <th>休憩時間</th>
+                <th>実働時間</th>
+            </tr>
+            <tr class="main_table"
+                th:each="day : ${monthDays}"
+                th:with="work=${workTimeMap[T(java.lang.Integer).valueOf(day)]}">
+                <td th:text="${day + '日'}"></td>
+                <td th:text="${(work != null and work.startTime != null) ? #temporals.format(work.startTime, 'HH時mm分') : ''}"></td>
+                <td th:text="${(work != null and work.finishTime != null) ? #temporals.format(work.finishTime, 'HH時mm分') : ''}"></td>
+                <td th:text="${(work != null and work.breakStartTime != null) ? #temporals.format(work.breakStartTime, 'HH時mm分') : ''}"></td>
+                <td th:text="${(work != null and work.breakFinishTime != null) ? #temporals.format(work.breakFinishTime, 'HH時mm分') : ''}"></td>
+                <td th:text="${(work != null) ? work.breakTimeStr : ''}"></td>
+                <td th:text="${(work != null) ? work.workingHoursStr : ''}"></td>
+            </tr>
+        </table>
+        <p th:text="${workTimeMap}"></p>
+    </div>
+</div>
+<div class="signature_form">
+    <table border="1">
+        <tr><th>本人印</th><th>承認印</th></tr>
+        <tr><td>&nbsp;</td><td>&nbsp;</td></tr>
+    </table>
+</div>
+<div class="link_button">
+    <button class="display_button" type="button" th:onclick="|location.href='@{/attendance/menu}'|">メニュー画面に戻る</button>
+</div>
+<div class="footer_top">
+    <table class="table_format">
+        <tr><th>管理者情報</th></tr>
+        <tr><td class="cel">会社名</td><td>&nbsp;</td><td>合同会社 しゅんカブ</td></tr>
+        <tr><td class="cel">Tell</td><td>&nbsp;</td><td>080-0000-0000</td></tr>
+        <tr><td class="cel">Email</td><td>&nbsp;</td><td>portforio@shuncub.com</td></tr>
+    </table>
+</div>
+<div class="footer_design">
+    <footer>
+        <small>© 2022 Shuncub.</small>
+    </footer>
+</div>
+</body>
+</html>

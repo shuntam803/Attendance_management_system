@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>タイムカード</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}" href="/css/style.css">
+    <script type="text/javascript" th:src="@{/JS/func.js}" src="/JS/func.js"></script>
+</head>
+<body>
+<div class="header">
+    <span class="big_title">S</span>hun
+    <span class="big_title">C</span>ub
+</div>
+<div class="menu">
+    <div class="main_frame">
+        <p>タイムカード</p>
+    </div>
+</div>
+<div class="display_top">
+    <p th:text="${#dates.format(#dates.createNow(), 'yyyy年MM月dd日')}"></p>
+    <p id="RealtimeClockArea"></p>
+</div>
+<div class="main_wrapper">
+    <div class="main_admin" th:if="${message != null}">
+        <p class="complete" th:text="${message}"></p>
+    </div>
+    <div class="main_admin" th:if="${error != null}">
+        <p class="error" th:text="${error}"></p>
+    </div>
+    <form th:action="@{/attendance/timecard}" method="post" class="attendance_form">
+        <input type="hidden" name="action" value="clockIn">
+        <input type="submit" name="submit" value="出勤" id="disableStartWorkButton"
+               class="attendance_timecard"
+               th:disabled="${status.clockedIn}">
+    </form>
+
+    <form th:action="@{/attendance/timecard}" method="post" class="attendance_form">
+        <input type="hidden" name="action" value="clockOut">
+        <input type="submit" name="submit" value="退勤" id="disableFinishWorkButton"
+               class="attendance_timecard"
+               th:disabled="${!status.clockedIn or status.clockedOut or (status.breakStarted and !status.breakFinished)}">
+    </form>
+
+    <form th:action="@{/attendance/timecard}" method="post" class="attendance_form">
+        <input type="hidden" name="action" value="startBreak">
+        <input type="submit" name="submit" value="休憩する" id="disableStartBreakButton"
+               class="attendance_timecard"
+               th:disabled="${status.clockedOut or !status.clockedIn or status.breakStarted}">
+    </form>
+
+    <form th:action="@{/attendance/timecard}" method="post" class="attendance_form">
+        <input type="hidden" name="action" value="finishBreak">
+        <input type="submit" name="submit" value="休憩終了" id="disableFinishBreakButton"
+               class="attendance_timecard"
+               th:disabled="${status.clockedOut or !status.breakStarted or status.breakFinished}">
+    </form>
+
+    <div class="a_logout_button">
+        <button class="display_button" type="button" th:onclick="|location.href='@{/attendance/menu}'|">メニューに戻る</button>
+    </div>
+</div>
+<div class="footer_top">
+    <table class="table_format">
+        <tr><th>管理者情報</th></tr>
+        <tr><td class="cel">会社名</td><td>&nbsp;</td><td>合同会社 しゅんカブ</td></tr>
+        <tr><td class="cel">Tell</td><td>&nbsp;</td><td>080-0000-0000</td></tr>
+        <tr><td class="cel">Email</td><td>&nbsp;</td><td>portforio@shuncub.com</td></tr>
+    </table>
+</div>
+<div class="footer_design">
+    <footer>
+        <small>© 2022 Shuncub.</small>
+    </footer>
+</div>
+<script type="text/javascript">
+    function updateClock() {
+        var now = new Date();
+        var text = now.toLocaleTimeString('ja-JP', {hour12: false});
+        var area = document.getElementById('RealtimeClockArea');
+        if (area) {
+            area.textContent = text;
+        }
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+</script>
+</body>
+</html>

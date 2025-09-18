@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>従業員削除確認</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}" href="/css/style.css">
+</head>
+<body>
+<div class="header">
+    <span class="big_title">S</span>hun
+    <span class="big_title">C</span>ub
+</div>
+<div class="menu">
+    <div class="main_frame">
+        <p>従業員削除確認</p>
+    </div>
+</div>
+<div class="main_wrapper">
+    <div class="main_admin">
+        <p>以下の従業員を削除します。よろしいですか？</p>
+    </div>
+    <div class="show_all_table">
+        <table class="border_table">
+            <tr><th>従業員コード</th><td th:text="${employee.employeeCode}"></td></tr>
+            <tr><th>氏名</th><td th:text="${employee.lastName + ' ' + employee.firstName}"></td></tr>
+            <tr><th>部署</th><td th:text="${employee.sectionCode}"></td></tr>
+            <tr><th>入社日</th><td th:text="${employee.hireDate}"></td></tr>
+        </table>
+    </div>
+    <div class="employee_button">
+        <form th:action="@{/admin/employees/{code}/delete(code=${employee.employeeCode})}" method="post">
+            <button type="submit" class="display_button">削除する</button>
+        </form>
+        <button type="button" class="display_button" th:onclick="|location.href='@{/admin/employees}'|">一覧へ戻る</button>
+    </div>
+</div>
+<div class="footer_top">
+    <table class="table_format">
+        <tr><th>管理者情報</th></tr>
+        <tr><td class="cel">会社名</td><td>&nbsp;</td><td>合同会社 しゅんカブ</td></tr>
+        <tr><td class="cel">Tell</td><td>&nbsp;</td><td>080-0000-0000</td></tr>
+        <tr><td class="cel">Email</td><td>&nbsp;</td><td>portforio@shuncub.com</td></tr>
+    </table>
+</div>
+<div class="footer_design">
+    <footer>
+        <small>© 2022 Shuncub.</small>
+    </footer>
+</div>
+</body>
+</html>
