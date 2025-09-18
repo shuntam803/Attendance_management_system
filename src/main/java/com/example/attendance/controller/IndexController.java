@@ -1,16 +1,19 @@
 package com.example.attendance.controller;
 
 import jakarta.servlet.http.HttpSession;
-import org.springframework.stereotype.Controller;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-@Controller
+@RestController
 public class IndexController {
 
-    @GetMapping("/")
-    public String index(HttpSession session) {
+    @GetMapping("/api/session/clear")
+    public ResponseEntity<IndexResponse> clearSession(HttpSession session) {
         session.removeAttribute("loginUserId");
         session.removeAttribute("employeeCode");
-        return "index";
+        return ResponseEntity.ok(new IndexResponse("セッション情報をクリアしました。"));
     }
+
+    public static record IndexResponse(String message) {}
 }

@@ -1,12 +1,13 @@
 <!DOCTYPE html>
-<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<html lang="ja">
 <head>
     <meta charset="UTF-8">
     <title>総務部登録</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}" href="/css/style.css">
-    <script type="text/javascript" th:src="@{/JS/func.js}" src="/JS/func.js"></script>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/JS/func.js" defer></script>
+    <script type="module" src="/JS/admin-app.js" defer></script>
 </head>
-<body>
+<body data-page="admin-register">
 <div class="header">
     <span class="big_title">S</span>hun
     <span class="big_title">C</span>ub
@@ -20,35 +21,38 @@
     <div class="main_admin">
         総務部として登録をします。<br>ユーザーID(4文字以上)、パスワード(8文字以上)を半角英数で入力してください。
     </div>
-    <div class="main_admin" th:if="${error != null}">
-        <p class="error" th:text="${error}"></p>
+    <div class="main_admin" id="admin-register-error" hidden>
+        <p class="error"></p>
     </div>
-    <form th:action="@{/admin/users}" method="post" th:object="${userForm}">
+    <div class="main_admin" id="admin-register-success" hidden>
+        <p class="complete"></p>
+    </div>
+    <form id="admin-register-form">
         <div class="regist_table">
             <table>
                 <tr>
                     <td>ユーザーID</td>
                     <td>：</td>
-                    <td><input type="text" th:field="*{userId}" id="user_id"></td>
+                    <td><input type="text" id="user_id"></td>
                     <td><div id="comment_user_id">半角英数4文字以上24文字以下で入力してください</div></td>
                 </tr>
                 <tr>
                     <td>パスワード</td>
                     <td>：</td>
-                    <td><input type="password" th:field="*{password}" id="password"></td>
+                    <td><input type="password" id="password"></td>
                     <td><div id="comment_password">半角英数8文字以上32文字以下で入力してください</div></td>
                 </tr>
                 <tr>
                     <td>もう一度</td>
                     <td>：</td>
-                    <td><input type="password" th:field="*{confirmation}" id="confirmation"></td>
+                    <td><input type="password" id="confirmation"></td>
                     <td><div id="comment_confirmation">パスワードと違います</div></td>
                 </tr>
             </table>
             <div class="tomenu_button">
                 <div class="admin_user_button">
                     <input type="submit" class="admin_user_submit" value="登録する">
-                    <button type="button" class="clear_button" th:onclick="|location.href='@{/admin/menu}'|">キャンセル</button>
+                    <button type="button" class="clear_button" data-link="/admin/menu.html">キャンセル</button>
                 </div>
             </div>
         </div>

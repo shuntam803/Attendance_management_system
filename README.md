@@ -1,13 +1,14 @@
 # Attendance_management_system
 
-勤怠管理アプリを Spring Boot + Thymeleaf で構築しています。
+勤怠管理アプリを Spring Boot (REST API) + 静的フロントエンドで構築しています。
 
 ## 使い方
 
-- 実行: `./gradlew bootRun` または `gradle bootRun`
+- 実行: `./gradlew bootRun`
 - ビルド: `./gradlew bootWar` で実行可能 WAR を作成
 
-アプリは組み込み Tomcat 上で Spring MVC コントローラと Thymeleaf テンプレートを利用して動作します。
+アプリは組み込み Tomcat 上で REST API を公開し、`src/main/resources/static` 配下の HTML/JS/CSS を配信します。
+ブラウザから `http://localhost:8080/index.html` にアクセスすると従業員・管理者メニューへ遷移できます。
 
 ## データベース設定
 
@@ -22,7 +23,14 @@ PostgreSQL 接続情報は環境変数またはシステムプロパティで上
 
 `-DAPP_DB_URL=jdbc:postgresql://localhost:5432/attendance -DAPP_DB_USER=postgres -DAPP_DB_PASS=postprePass`
 
-## 備考
+## フロントエンド構成
 
-- 画面テンプレートは `src/main/resources/templates` 配下の Thymeleaf (`.html`) で提供します。
-- ビルドは WAR 形式（`bootWar`）。Spring MVC コントローラがルーティングを担います。
+- 静的ファイルは `src/main/resources/static` に配置されています。
+  - 従業員向け画面: `static/attendance/*.html`
+  - 管理者向け画面: `static/admin/**/*.html`
+- JavaScript は用途別に以下へ集約しています。
+  - `static/JS/attendance-app.js`
+  - `static/JS/admin-app.js`
+  - 共通ユーティリティ: `static/JS/func.js`
+
+これらのファイルが Spring Boot の静的リソースとして配信され、REST API (`/attendance/**`, `/admin/**`) と通信します。

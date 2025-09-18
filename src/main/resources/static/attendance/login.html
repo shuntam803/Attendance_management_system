@@ -1,47 +1,48 @@
 <!DOCTYPE html>
-<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>管理者用ログイン</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}" href="/css/style.css">
+    <title>従業員用ログイン画面</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script type="module" src="/JS/attendance-app.js" defer></script>
 </head>
-<body>
+<body data-page="attendance-login">
 <div class="header">
     <span class="big_title">S</span>hun
     <span class="big_title">C</span>ub
 </div>
 <div class="menu">
     <div class="main_frame">
-        <p>管理者用ログイン画面</p>
+        <p>従業員用ログイン画面</p>
     </div>
 </div>
 <div class="main_wrapper">
-    <form th:action="@{/admin/login}" method="post" th:object="${loginForm}">
+    <form id="login-form">
         <div class="regist_table">
             <table>
                 <tr>
-                    <td>ユーザID</td>
+                    <td>従業員コード</td>
                     <td>：</td>
-                    <td><input type="text" th:field="*{userId}"/></td>
+                    <td><input type="text" id="employeeCode" autocomplete="username"></td>
                 </tr>
                 <tr>
                     <td>パスワード</td>
                     <td>：</td>
-                    <td><input type="password" th:field="*{password}"/></td>
+                    <td><input type="password" id="password" autocomplete="current-password"></td>
                 </tr>
             </table>
         </div>
         <div class="admin_user_button">
-            <input type="submit" class="login_button" value="ログイン"/>
-            <input type="reset" class="clear_button" value="クリア"/>
+            <input type="submit" class="login_button" value="ログイン">
+            <input type="reset" class="clear_button" value="クリア">
         </div>
     </form>
+    <div class="main_admin" id="error-message" hidden>
+        <p class="error"></p>
+    </div>
     <div class="admin_user_button">
-        <button class="display_button" th:onclick="|location.href='@{/}'|">TOPページ</button>
-    </div>
-    <div class="main_admin" th:if="${error} == 'fail'">
-        <p class="error">ユーザIDまたはパスワードが正しくありません。</p>
-    </div>
+        <button class="display_button" type="button" data-link="/index.html">Topページ</button>
+</div>
 </div>
 <div class="footer_top">
     <table class="table_format">

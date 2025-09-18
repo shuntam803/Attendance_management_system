@@ -1,26 +1,31 @@
 <!DOCTYPE html>
-<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title th:text="${title}">処理結果</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}" href="/css/style.css">
+    <title>Start Up Education</title>
+    <link rel="icon" href="/image/favicon.ico">
+    <link rel="stylesheet" href="/css/style.css">
+    <script type="module" src="/JS/index-page.js" defer></script>
 </head>
 <body>
 <div class="header">
     <span class="big_title">S</span>hun
     <span class="big_title">C</span>ub
 </div>
+
 <div class="menu">
     <div class="main_frame">
-        <p th:text="${title} ?: '処理結果'"></p>
+        <p>TOPページ</p>
     </div>
 </div>
-<div class="main_wrapper">
-    <div class="main_admin" th:text="${message}">処理が完了しました。</div>
-    <div class="logout_button">
-        <button class="display_button" type="button" th:onclick="|location.href='@{${backLink}}'|" th:text="${backText} ?: '戻る'"></button>
+
+<div class="i_main_wrapper">
+    <div class="employee_button">
+        <button class="regist_button" data-link="/admin/login.html">管理者用メニュー</button>
+        <button data-link="/attendance/login.html">従業員用メニュー</button>
     </div>
 </div>
+
 <div class="footer_top">
     <table class="table_format">
         <tr><th>管理者情報</th></tr>
@@ -29,6 +34,7 @@
         <tr><td class="cel">Email</td><td>&nbsp;</td><td>portforio@shuncub.com</td></tr>
     </table>
 </div>
+
 <div class="footer_design">
     <footer>
         <small>© 2022 Shuncub.</small>

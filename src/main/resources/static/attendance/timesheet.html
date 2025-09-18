@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>月次報告画面</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script type="module" src="/JS/attendance-app.js" defer></script>
+</head>
+<body data-page="attendance-timesheet">
+<div class="header">
+    <span class="big_title">S</span>hun
+    <span class="big_title">C</span>ub
+</div>
+<div class="menu">
+    <div class="main_frame">
+        <p>月次報告画面</p>
+    </div>
+</div>
+<div class="main_wrapper">
+    <div class="main_admin">
+        <div>表示させたい年月を選択してください</div>
+    </div>
+    <div class="main_admin" id="timesheet-error" hidden>
+        <p class="error"></p>
+    </div>
+    <form id="timesheet-form" class="attendance_select_form">
+        <select id="timesheet-month" class="margin_r" required>
+            <option value="" disabled selected>選択してください</option>
+        </select>
+        <button type="submit" class="attendance_select_timesheet">タイムシートを表示する</button>
+    </form>
+    <section id="timesheet-view" hidden>
+        <div class="name_format">
+            名前：<span id="employee-name"></span>
+        </div>
+        <div class="name_format">
+            <span id="selected-month"></span>
+        </div>
+        <div class="edit_top">
+            <div class="show_all_table">
+                <table class="border_table" id="timesheet-table">
+                    <thead>
+                        <tr class="top_table">
+                            <th>日にち</th>
+                            <th>出勤</th>
+                            <th>退勤</th>
+                            <th>休憩入り</th>
+                            <th>休憩戻り</th>
+                            <th>休憩時間</th>
+                            <th>実働時間</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+        <div class="signature_form">
+            <table border="1">
+                <tr><th>本人印</th><th>承認印</th></tr>
+                <tr><td>&nbsp;</td><td>&nbsp;</td></tr>
+            </table>
+        </div>
+    </section>
+    <div class="a_logout_button">
+        <button class="display_button" type="button" data-link="/attendance/menu.html">メニューに戻る</button>
+    </div>
+</div>
+<div class="footer_top">
+    <table class="table_format">
+        <tr><th>管理者情報</th></tr>
+        <tr><td class="cel">会社名</td><td>&nbsp;</td><td>合同会社 しゅんカブ</td></tr>
+        <tr><td class="cel">Tell</td><td>&nbsp;</td><td>080-0000-0000</td></tr>
+        <tr><td class="cel">Email</td><td>&nbsp;</td><td>portforio@shuncub.com</td></tr>
+    </table>
+</div>
+<div class="footer_design">
+    <footer>
+        <small>© 2022 Shuncub.</small>
+    </footer>
+</div>
+</body>
+</html>

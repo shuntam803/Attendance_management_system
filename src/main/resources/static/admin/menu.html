@@ -1,11 +1,12 @@
 <!DOCTYPE html>
-<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<html lang="ja">
 <head>
     <meta charset="UTF-8">
     <title>管理者用メニュー</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}" href="/css/style.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script type="module" src="/JS/admin-app.js" defer></script>
 </head>
-<body>
+<body data-page="admin-menu">
 <div class="header">
     <span class="big_title">S</span>hun
     <span class="big_title">C</span>ub
@@ -17,19 +18,20 @@
 </div>
 <div class="main_wrapper">
     <div class="employee_button">
-        <button class="display_button" type="button" th:onclick="|location.href='@{/admin/employees/new}'|">従業員登録</button>
-        <button class="display_button" type="button" th:onclick="|location.href='@{/admin/employees}'|">従業員情報一覧</button>
+        <button class="display_button" type="button" data-link="/admin/employees/new.html">従業員登録</button>
+        <button class="display_button" type="button" data-link="/admin/employees/index.html">従業員情報一覧</button>
     </div>
     <div class="logout_button">
-        <button class="display_button" type="button" th:onclick="|location.href='@{/admin/users/new}'|">管理者権限を付与する</button>
+        <button class="display_button" type="button" data-link="/admin/users/new.html">管理者権限を付与する</button>
     </div>
     <div class="link_main_button">
-        <form th:action="@{/admin/logout}" method="post">
-            <button class="display_button">ログアウト</button>
-        </form>
+        <button class="display_button" type="button" id="admin-logout">ログアウト</button>
     </div>
     <div class="link_main_button">
-        <button class="display_button" th:onclick="|location.href='@{/}'|">Topページ</button>
+        <button class="display_button" type="button" data-link="/index.html">Topページ</button>
+    </div>
+    <div class="main_admin" id="admin-menu-error" hidden>
+        <p class="error"></p>
     </div>
 </div>
 <div class="footer_top">

@@ -1,11 +1,12 @@
 <!DOCTYPE html>
-<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<html lang="ja">
 <head>
     <meta charset="UTF-8">
     <title>従業員用メニュー画面</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}" href="/css/style.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script type="module" src="/JS/attendance-app.js" defer></script>
 </head>
-<body>
+<body data-page="attendance-menu">
 <div class="header">
     <span class="big_title">S</span>hun
     <span class="big_title">C</span>ub
@@ -17,16 +18,17 @@
 </div>
 <div class="main_wrapper">
     <div class="employee_button">
-        <button class="a_display_button" type="button" th:onclick="|location.href='@{/attendance/timecard}'|">打刻する</button>
-        <button class="a_display_button" type="button" th:onclick="|location.href='@{/attendance/timesheet}'|">月次報告する</button>
+        <button class="a_display_button" type="button" data-link="/attendance/timecard.html">打刻する</button>
+        <button class="a_display_button" type="button" data-link="/attendance/timesheet.html">月次報告する</button>
     </div>
     <div class="logout_button">
-        <form th:action="@{/attendance/logout}" method="post">
-            <input type="submit" class="a_display_button" value="ログアウト">
-        </form>
+        <button class="a_display_button" type="button" id="logout-button">ログアウト</button>
     </div>
     <div class="display_top">
-        <button class="display_button" type="button" th:onclick="|location.href='@{/}'|">Topページ</button>
+        <button class="display_button" type="button" data-link="/index.html">Topページ</button>
+    </div>
+    <div class="main_admin" id="menu-error" hidden>
+        <p class="error"></p>
     </div>
 </div>
 <div class="footer_top">

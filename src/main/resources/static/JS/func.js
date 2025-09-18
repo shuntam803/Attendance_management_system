@@ -140,9 +140,16 @@ const setValue = btn => {
 const setTime = num => String(num).padStart(2, "0");
 
 const showClock = () => {
+	const target = document.getElementById("RealtimeClockArea");
+	if (!target) {
+		return;
+	}
 	const now = new Date();
 	const msg = `${setTime(now.getHours())}:${setTime(now.getMinutes())}:${setTime(now.getSeconds())}`;
-	document.getElementById("RealtimeClockArea").textContent = msg;
+	target.textContent = msg;
 };
 
-setInterval(showClock, 1000);
+if (document.getElementById("RealtimeClockArea")) {
+	showClock();
+	setInterval(showClock, 1000);
+}

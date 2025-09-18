@@ -1,103 +1,98 @@
 <!DOCTYPE html>
-<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title th:text="${mode == 'edit'} ? '従業員編集' : '従業員登録'">従業員登録</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}" href="/css/style.css">
-    <script type="text/javascript" th:src="@{/JS/func.js}" src="/JS/func.js"></script>
+    <title>従業員登録</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/JS/func.js" defer></script>
+    <script type="module" src="/JS/admin-app.js" defer></script>
 </head>
-<body>
+<body data-page="admin-employees-form" data-form-mode="create">
 <div class="header">
     <span class="big_title">S</span>hun
     <span class="big_title">C</span>ub
 </div>
 <div class="menu">
     <div class="main_frame">
-        <p th:text="${mode == 'edit'} ? '従業員編集' : '従業員登録'"></p>
+        <p>従業員登録</p>
     </div>
 </div>
 <div class="main_wrapper">
-    <div class="main_admin" th:if="${error != null}">
-        <p class="error" th:text="${error}"></p>
+    <div class="main_admin" id="employee-form-error" hidden>
+        <p class="error"></p>
     </div>
-    <form th:action="${mode == 'edit'} ? @{/admin/employees/{code}/edit(code=${employeeForm.employeeCode})} : @{/admin/employees}" method="post" th:object="${employeeForm}">
+    <div class="main_admin" id="employee-form-success" hidden>
+        <p class="complete"></p>
+    </div>
+    <form id="employee-form">
         <div class="comment_show_all">
             文字の入力、もしくは氏・名は16文字以下、<br>氏かな・名かなは24文字以下で入力してください
         </div>
         <div class="regist_table">
             <table>
-                <tr th:if="${mode == 'edit'}">
-                    <td>従業員コード</td>
-                    <td>：</td>
-                    <td th:text="*{employeeCode}"></td>
-                </tr>
                 <tr>
                     <td>氏</td>
                     <td>：</td>
-                    <td><input type="text" th:field="*{lastName}" id="last_name"></td>
+                    <td><input type="text" id="last_name"></td>
                 </tr>
                 <tr>
                     <td>名</td>
                     <td>：</td>
-                    <td><input type="text" th:field="*{firstName}" id="first_name"></td>
+                    <td><input type="text" id="first_name"></td>
                 </tr>
                 <tr>
                     <td>氏かな</td>
                     <td>：</td>
-                    <td><input type="text" th:field="*{lastKanaName}" id="last_kana_name"></td>
+                    <td><input type="text" id="last_kana_name"></td>
                 </tr>
                 <tr>
                     <td>名かな</td>
                     <td>：</td>
-                    <td><input type="text" th:field="*{firstKanaName}" id="first_kana_name"></td>
+                    <td><input type="text" id="first_kana_name"></td>
                 </tr>
                 <tr>
                     <td>性別</td>
                     <td>：</td>
                     <td>
-                        <label><input type="radio" th:field="*{gender}" value="0">男性</label>
-                        <label><input type="radio" th:field="*{gender}" value="1">女性</label>
+                        <label><input type="radio" name="gender" value="0">男性</label>
+                        <label><input type="radio" name="gender" value="1">女性</label>
                     </td>
                 </tr>
                 <tr>
                     <td>部署名</td>
                     <td>：</td>
                     <td>
-                        <select th:field="*{sectionCode}">
-                            <option th:each="section : ${sections}"
-                                    th:value="${section.sectionCode}"
-                                    th:text="${section.sectionName}"></option>
-                        </select>
+                        <select id="section_code"></select>
                     </td>
                 </tr>
                 <tr>
                     <td>生年月日</td>
                     <td>：</td>
-                    <td><input type="date" th:field="*{birthDay}" id="birth_day" required></td>
+                    <td><input type="date" id="birth_day" required></td>
                     <td><div id="comment_date">本日より前の日付を入力してください</div></td>
                 </tr>
                 <tr>
                     <td>入社日</td>
                     <td>：</td>
-                    <td><input type="date" th:field="*{hireDate}" id="hire_date" required></td>
+                    <td><input type="date" id="hire_day" required></td>
                 </tr>
-                <tr th:if="${mode != 'edit'}">
+                <tr>
                     <td>パスワード</td>
                     <td>：</td>
-                    <td><input type="password" th:field="*{password}" id="password"></td>
+                    <td><input type="password" id="password"></td>
                     <td><div id="comment_password">半角英数8文字以上32文字以下で入力してください</div></td>
                 </tr>
-                <tr th:if="${mode != 'edit'}">
+                <tr>
                     <td>もう一度</td>
                     <td>：</td>
-                    <td><input type="password" th:field="*{confirmation}" id="confirmation"></td>
+                    <td><input type="password" id="confirmation"></td>
                     <td><div id="comment_confirmation">パスワードと違います</div></td>
                 </tr>
             </table>
             <div class="tomenu_button">
                 <div class="admin_user_button">
-                    <input type="submit" class="admin_user_submit" th:value="${mode == 'edit'} ? '編集する' : '登録する'">
-                    <button type="button" class="clear_button" th:onclick="|location.href='@{/admin/menu}'|">キャンセル</button>
+                    <input type="submit" class="admin_user_submit" value="登録する">
+                    <button type="button" class="clear_button" data-link="/admin/menu.html">キャンセル</button>
                 </div>
             </div>
         </div>

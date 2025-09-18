@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>従業員削除確認</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script type="module" src="/JS/admin-app.js" defer></script>
+</head>
+<body data-page="admin-employees-delete">
+<div class="header">
+    <span class="big_title">S</span>hun
+    <span class="big_title">C</span>ub
+</div>
+<div class="menu">
+    <div class="main_frame">
+        <p>従業員削除確認</p>
+    </div>
+</div>
+<div class="main_wrapper">
+    <div class="main_admin" id="employee-delete-error" hidden>
+        <p class="error"></p>
+    </div>
+    <div class="main_admin" id="employee-delete-message" hidden>
+        <p class="complete"></p>
+    </div>
+    <div class="show_all_table">
+        <table class="border_table" id="employee-delete-table">
+            <tr><th>従業員コード</th><td id="delete-code"></td></tr>
+            <tr><th>氏名</th><td id="delete-name"></td></tr>
+            <tr><th>部署</th><td id="delete-section"></td></tr>
+            <tr><th>入社日</th><td id="delete-hire"></td></tr>
+        </table>
+    </div>
+    <div class="employee_button">
+        <button type="button" class="display_button" id="delete-confirm">削除する</button>
+        <button type="button" class="display_button" data-link="/admin/employees/index.html">一覧へ戻る</button>
+    </div>
+</div>
+<div class="footer_top">
+    <table class="table_format">
+        <tr><th>管理者情報</th></tr>
+        <tr><td class="cel">会社名</td><td>&nbsp;</td><td>合同会社 しゅんカブ</td></tr>
+        <tr><td class="cel">Tell</td><td>&nbsp;</td><td>080-0000-0000</td></tr>
+        <tr><td class="cel">Email</td><td>&nbsp;</td><td>portforio@shuncub.com</td></tr>
+    </table>
+</div>
+<div class="footer_design">
+    <footer>
+        <small>© 2022 Shuncub.</small>
+    </footer>
+</div>
+</body>
+</html>

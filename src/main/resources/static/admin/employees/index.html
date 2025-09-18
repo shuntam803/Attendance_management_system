@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>従業員一覧</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script type="module" src="/JS/admin-app.js" defer></script>
+</head>
+<body data-page="admin-employees-list">
+<div class="header">
+    <span class="big_title">S</span>hun
+    <span class="big_title">C</span>ub
+</div>
+<div class="menu">
+    <div class="main_frame">
+        <p>従業員一覧</p>
+    </div>
+</div>
+<div class="main_wrapper">
+    <div class="main_admin" id="employee-list-error" hidden>
+        <p class="error"></p>
+    </div>
+    <div class="show_all_table">
+        <table class="border_table" id="employee-table">
+            <thead>
+                <tr class="top_table">
+                    <td></td>
+                    <td>従業員コード</td>
+                    <td>氏名</td>
+                    <td>かな</td>
+                    <td>性別</td>
+                    <td>生年月日</td>
+                    <td>所属部署</td>
+                    <td>入社日</td>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+    <div class="comment_show_all">編集・削除したい従業員にチェックを入れてください</div>
+    <div class="employee_button">
+        <button type="button" class="display_button" data-action="edit">従業員を編集する</button>
+        <button type="button" class="display_button" data-action="delete">従業員を削除する</button>
+    </div>
+    <div class="link_main_button">
+        <button class="display_button" type="button" data-link="/admin/menu.html">メニュー画面に戻る</button>
+    </div>
+</div>
+<div class="footer_top">
+    <table class="table_format">
+        <tr><th>管理者情報</th></tr>
+        <tr><td class="cel">会社名</td><td>&nbsp;</td><td>合同会社 しゅんカブ</td></tr>
+        <tr><td class="cel">Tell</td><td>&nbsp;</td><td>080-0000-0000</td></tr>
+        <tr><td class="cel">Email</td><td>&nbsp;</td><td>portforio@shuncub.com</td></tr>
+    </table>
+</div>
+<div class="footer_design">
+    <footer>
+        <small>© 2022 Shuncub.</small>
+    </footer>
+</div>
+</body>
+</html>

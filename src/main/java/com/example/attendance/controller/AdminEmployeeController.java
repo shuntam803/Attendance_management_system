@@ -6,20 +6,20 @@ import com.example.attendance.model.Section;
 import com.example.attendance.model.ViewListDisplay;
 import com.example.attendance.service.AdminService;
 import jakarta.servlet.http.HttpSession;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.Optional;
 
-@Controller
+@RestController
 @RequestMapping("/admin/employees")
 public class AdminEmployeeController {
 
@@ -30,89 +30,76 @@ public class AdminEmployeeController {
     }
 
     @GetMapping
-    public String listEmployees(HttpSession session, Model model,
-                                @RequestParam(value = "error", required = false) String error) {
+    public ResponseEntity<EmployeeListResponse> listEmployees(HttpSession session,
+                                                              @RequestParam(value = "error", required = false) String error) {
         if (!isLoggedIn(session)) {
-            return "redirect:/admin/login";
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new EmployeeListResponse(List.of(), "ログインしてください。"));
         }
         List<ViewListDisplay> employees = adminService.listEmployees();
-        model.addAttribute("employees", employees);
-        model.addAttribute("error", error);
-        return "admin/employees/list";
+        return ResponseEntity.ok(new EmployeeListResponse(employees, error));
     }
 
     @GetMapping("/new")
-    public String showCreateForm(HttpSession session, Model model) {
+    public ResponseEntity<EmployeeFormResponse> showCreateForm(HttpSession session) {
         if (!isLoggedIn(session)) {
-            return "redirect:/admin/login";
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new EmployeeFormResponse(null, listSections(), "ログインしてください。", "create"));
         }
-        populateSections(model);
-        if (!model.containsAttribute("employeeForm")) {
-            model.addAttribute("employeeForm", new EmployeeForm());
-        }
-        return "admin/employees/form";
+        return ResponseEntity.ok(new EmployeeFormResponse(new EmployeeForm(), listSections(), null, "create"));
     }
 
     @PostMapping
-    public String createEmployee(@ModelAttribute("employeeForm") EmployeeForm form,
-                                 HttpSession session,
-                                 Model model) {
+    public ResponseEntity<SimpleMessageResponse> createEmployee(@RequestBody EmployeeForm form,
+                                                                HttpSession session) {
         if (!isLoggedIn(session)) {
-            return "redirect:/admin/login";
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new SimpleMessageResponse("ログインしてください。"));
         }
         String validationError = validateEmployeeForm(form, true);
         if (validationError != null) {
-            populateSections(model);
-            model.addAttribute("employeeForm", form);
-            model.addAttribute("error", validationError);
-            return "admin/employees/form";
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new SimpleMessageResponse(validationError));
         }
         String employeeCode = adminService.registerEmployee(form.toNewEmployee());
         if (employeeCode != null) {
-            model.addAttribute("title", "登録完了");
-            model.addAttribute("message", "従業員コード " + employeeCode + " を登録しました。");
-            model.addAttribute("backLink", "/admin/employees");
-            model.addAttribute("backText", "一覧に戻る");
-            return "admin/result";
+            return ResponseEntity.ok(new SimpleMessageResponse("従業員コード " + employeeCode + " を登録しました。"));
         }
-        populateSections(model);
-        model.addAttribute("employeeForm", form);
-        model.addAttribute("error", "従業員の登録に失敗しました。");
-        return "admin/employees/form";
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new SimpleMessageResponse("従業員の登録に失敗しました。"));
     }
 
     @PostMapping("/action")
-    public String selectEmployeeAction(@RequestParam(value = "employeeCode", required = false) String employeeCode,
-                                       @RequestParam("action") String action,
-                                       HttpSession session,
-                                       RedirectAttributes redirectAttributes) {
+    public ResponseEntity<EmployeeActionResponse> selectEmployeeAction(@RequestBody EmployeeActionRequest request,
+                                                                       HttpSession session) {
         if (!isLoggedIn(session)) {
-            return "redirect:/admin/login";
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new EmployeeActionResponse(null, "ログインしてください。"));
         }
+        String employeeCode = request.employeeCode();
+        String action = request.action();
         if (employeeCode == null || employeeCode.isBlank()) {
-            redirectAttributes.addAttribute("error", "従業員を選択してください。");
-            return "redirect:/admin/employees";
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new EmployeeActionResponse(null, "従業員を選択してください。"));
         }
-        if ("edit".equals(action)) {
-            return "redirect:/admin/employees/" + employeeCode + "/edit";
+        if ("edit".equals(action) || "delete".equals(action)) {
+            return ResponseEntity.ok(new EmployeeActionResponse("/admin/employees/" + employeeCode + "/" + action, null));
         }
-        if ("delete".equals(action)) {
-            return "redirect:/admin/employees/" + employeeCode + "/delete";
-        }
-        redirectAttributes.addAttribute("error", "不明な操作です。");
-        return "redirect:/admin/employees";
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new EmployeeActionResponse(null, "不明な操作です。"));
     }
 
     @GetMapping("/{employeeCode}/edit")
-    public String showEditForm(@PathVariable String employeeCode,
-                               HttpSession session,
-                               Model model) {
+    public ResponseEntity<EmployeeFormResponse> showEditForm(@PathVariable String employeeCode,
+                                                             HttpSession session) {
         if (!isLoggedIn(session)) {
-            return "redirect:/admin/login";
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new EmployeeFormResponse(null, listSections(), "ログインしてください。", "edit"));
         }
         Optional<Employee> employeeOpt = adminService.findEmployee(employeeCode);
         if (employeeOpt.isEmpty()) {
-            return "redirect:/admin/employees?error=notfound";
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new EmployeeFormResponse(null, listSections(), "従業員が見つかりません。", "edit"));
         }
         Employee employee = employeeOpt.get();
         EmployeeForm form = new EmployeeForm();
@@ -125,88 +112,67 @@ public class AdminEmployeeController {
         form.setBirthDay(employee.getBirthDay());
         form.setSectionCode(employee.getSectionCode());
         form.setHireDate(employee.getHireDate());
-        model.addAttribute("employeeForm", form);
-        populateSections(model);
-        model.addAttribute("mode", "edit");
-        return "admin/employees/form";
+        return ResponseEntity.ok(new EmployeeFormResponse(form, listSections(), null, "edit"));
     }
 
     @PostMapping("/{employeeCode}/edit")
-    public String updateEmployee(@PathVariable String employeeCode,
-                                 @ModelAttribute("employeeForm") EmployeeForm form,
-                                 HttpSession session,
-                                 Model model) {
+    public ResponseEntity<SimpleMessageResponse> updateEmployee(@PathVariable String employeeCode,
+                                                                @RequestBody EmployeeForm form,
+                                                                HttpSession session) {
         if (!isLoggedIn(session)) {
-            return "redirect:/admin/login";
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new SimpleMessageResponse("ログインしてください。"));
         }
         form.setEmployeeCode(employeeCode);
         String validationError = validateEmployeeForm(form, false);
         if (validationError != null) {
-            populateSections(model);
-            model.addAttribute("employeeForm", form);
-            model.addAttribute("mode", "edit");
-            model.addAttribute("error", validationError);
-            return "admin/employees/form";
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new SimpleMessageResponse(validationError));
         }
         boolean updated = adminService.updateEmployee(form.toExistingEmployee());
         if (updated) {
-            model.addAttribute("title", "更新完了");
-            model.addAttribute("message", "従業員情報を更新しました。");
-            model.addAttribute("backLink", "/admin/employees");
-            model.addAttribute("backText", "一覧に戻る");
-            return "admin/result";
+            return ResponseEntity.ok(new SimpleMessageResponse("従業員情報を更新しました。"));
         }
-        populateSections(model);
-        model.addAttribute("employeeForm", form);
-        model.addAttribute("mode", "edit");
-        model.addAttribute("error", "従業員情報の更新に失敗しました。");
-        return "admin/employees/form";
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new SimpleMessageResponse("従業員情報の更新に失敗しました。"));
     }
 
     @GetMapping("/{employeeCode}/delete")
-    public String confirmDelete(@PathVariable String employeeCode,
-                                HttpSession session,
-                                Model model) {
+    public ResponseEntity<EmployeeDetailResponse> confirmDelete(@PathVariable String employeeCode,
+                                                                HttpSession session) {
         if (!isLoggedIn(session)) {
-            return "redirect:/admin/login";
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new EmployeeDetailResponse(null, "ログインしてください。"));
         }
         Optional<Employee> employeeOpt = adminService.findEmployee(employeeCode);
         if (employeeOpt.isEmpty()) {
-            return "redirect:/admin/employees?error=notfound";
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new EmployeeDetailResponse(null, "従業員が見つかりません。"));
         }
-        model.addAttribute("employee", employeeOpt.get());
-        return "admin/employees/delete";
+        return ResponseEntity.ok(new EmployeeDetailResponse(employeeOpt.get(), null));
     }
 
     @PostMapping("/{employeeCode}/delete")
-    public String deleteEmployee(@PathVariable String employeeCode,
-                                 HttpSession session,
-                                 Model model) {
+    public ResponseEntity<SimpleMessageResponse> deleteEmployee(@PathVariable String employeeCode,
+                                                                HttpSession session) {
         if (!isLoggedIn(session)) {
-            return "redirect:/admin/login";
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new SimpleMessageResponse("ログインしてください。"));
         }
         boolean deleted = adminService.deleteEmployee(employeeCode);
         if (deleted) {
-            model.addAttribute("title", "削除完了");
-            model.addAttribute("message", "従業員を削除しました。");
-            model.addAttribute("backLink", "/admin/employees");
-            model.addAttribute("backText", "一覧に戻る");
-            return "admin/result";
+            return ResponseEntity.ok(new SimpleMessageResponse("従業員を削除しました。"));
         }
-        model.addAttribute("title", "削除失敗");
-        model.addAttribute("message", "従業員の削除に失敗しました。");
-        model.addAttribute("backLink", "/admin/employees");
-        model.addAttribute("backText", "一覧に戻る");
-        return "admin/result";
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new SimpleMessageResponse("従業員の削除に失敗しました。"));
     }
 
     private boolean isLoggedIn(HttpSession session) {
         return session.getAttribute("loginUserId") != null;
     }
 
-    private void populateSections(Model model) {
-        List<Section> sections = adminService.listSections();
-        model.addAttribute("sections", sections);
+    private List<Section> listSections() {
+        return adminService.listSections();
     }
 
     private String validateEmployeeForm(EmployeeForm form, boolean requirePassword) {
@@ -230,4 +196,19 @@ public class AdminEmployeeController {
     private boolean isBlank(String value) {
         return value == null || value.isBlank();
     }
+
+    public static record EmployeeListResponse(List<ViewListDisplay> employees, String error) {}
+
+    public static record EmployeeFormResponse(EmployeeForm form,
+                                              List<Section> sections,
+                                              String error,
+                                              String mode) {}
+
+    public static record SimpleMessageResponse(String message) {}
+
+    public static record EmployeeActionRequest(String employeeCode, String action) {}
+
+    public static record EmployeeActionResponse(String nextPath, String error) {}
+
+    public static record EmployeeDetailResponse(Employee employee, String error) {}
 }

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>タイムカード</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/JS/func.js" defer></script>
+    <script type="module" src="/JS/attendance-app.js" defer></script>
+</head>
+<body data-page="attendance-timecard">
+<div class="header">
+    <span class="big_title">S</span>hun
+    <span class="big_title">C</span>ub
+</div>
+<div class="menu">
+    <div class="main_frame">
+        <p>タイムカード</p>
+    </div>
+</div>
+<div class="display_top">
+    <p id="current-date"></p>
+    <p id="RealtimeClockArea"></p>
+</div>
+<div class="main_wrapper">
+    <div class="main_admin" id="timecard-message" hidden>
+        <p class="complete"></p>
+    </div>
+    <div class="main_admin" id="timecard-error" hidden>
+        <p class="error"></p>
+    </div>
+    <div class="attendance_form">
+        <button type="button" id="clock-in" class="attendance_timecard">出勤</button>
+        <button type="button" id="clock-out" class="attendance_timecard">退勤</button>
+        <button type="button" id="break-start" class="attendance_timecard">休憩する</button>
+        <button type="button" id="break-end" class="attendance_timecard">休憩終了</button>
+    </div>
+    <div class="a_logout_button">
+        <button class="display_button" type="button" data-link="/attendance/menu.html">メニューに戻る</button>
+    </div>
+</div>
+<div class="footer_top">
+    <table class="table_format">
+        <tr><th>管理者情報</th></tr>
+        <tr><td class="cel">会社名</td><td>&nbsp;</td><td>合同会社 しゅんカブ</td></tr>
+        <tr><td class="cel">Tell</td><td>&nbsp;</td><td>080-0000-0000</td></tr>
+        <tr><td class="cel">Email</td><td>&nbsp;</td><td>portforio@shuncub.com</td></tr>
+    </table>
+</div>
+<div class="footer_design">
+    <footer>
+        <small>© 2022 Shuncub.</small>
+    </footer>
+</div>
+</body>
+</html>
